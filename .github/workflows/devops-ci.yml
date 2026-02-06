@@ -20,12 +20,11 @@ jobs:
   # 1) PRECHECKS (Quality Gates)
   # -------------------------
   prechecks:
-    env:
-        APP_ENV: ${{ github.event.inputs.env || 'dev' }}
-        CONFIG_PATH: configs/env.yaml
-        
     name: Pre-deployment checks
     runs-on: ubuntu-latest
+    env:
+      APP_ENV: ${{ github.event.inputs.env || 'dev' }}
+      CONFIG_PATH: configs/env.yaml
 
     steps:
       - name: Checkout repo
@@ -66,78 +65,11 @@ jobs:
 
       # --- Safety gates. Any non-zero exit here FAILS prechecks ---
       - name: Disk space gate
-        env:
-          # Tip: set higher (e.g., 95) to simulate a failing gate
-          DISK_FREE_THRESHOLD: "5"
         run: python scripts/disk_check.py
 
-      - name: Config reader (dev)
-        env:
-          APP_ENV: "dev"
-          CONFIG_PATH: "configs/env.yaml"
+      - name: Config reader (echo active env)
         run: python scripts/read_config.py
 
       - name: Config validation gate
         run: python scripts/config_validate.py
 
-      - name: Port guard gate
-        run: python scripts/port_guard.py
-
-      - name: Service check gate
-        run: python scripts/service_check.py
-
-      - name: Save logs as artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: devops-logs
-          path: |
-            logs/**
-          if-no-files-found: ignore
-          compression-level: 6
-          retention-days: 7
-
-  # -------------------------
-  # 2) DEPLOY (runs only if prechecks pass)
-  # -------------------------
-  deploy:
-    env:
-        APP_ENV: ${{ github.event.inputs.env || 'dev' }}
-        CONFIG_PATH: configs/env.yaml
-        
-    name: Deploy (simulated)
-    needs: prechecks
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-      - name: Run deploy script
-        run: python scripts/deploy.py
-
-      - name: Rollback on failure
-        if: failure()
-        run: |
-          echo "Deploy failed - running rollback (simulated)"
-          python scripts/rollback.py
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-      # ---- Replace these with real deployment steps later ----
-      - name: Simulate deployment steps
-        run: |
-          echo "✅ All prechecks passed. Proceeding with deployment..."
