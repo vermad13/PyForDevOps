@@ -21,22 +21,7 @@ jobs:
   # -------------------------
   prechecks:
     name: Pre-deployment checks
-    runs-on: ubuntu-latest
-    env:
-      APP_ENV: ${{ github.event.inputs.env || 'dev' }}
-      CONFIG_PATH: configs/env.yaml
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
-
-      - name: Install dependencies
+    runs-on: ubuntu-latest: Install dependencies    runs-on: ubuntu-latest
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
@@ -108,10 +93,9 @@ jobs:
     needs: prechecks
     runs-on: ubuntu-latest
 
-    # 👇 This ties the job to a GitHub Environment (dev or prod)
-    # If 'prod' has Required reviewers, the job will pause for approval.
+    # ✅ Use the workflow-dispatch input directly here
     environment:
-      name: ${{ env.APP_ENV }}
+      name: ${{ github.event.inputs.env || 'dev' }}
 
     env:
       APP_ENV: ${{ github.event.inputs.env || 'dev' }}
@@ -159,3 +143,18 @@ jobs:
           ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
           ALERT_FORMAT: "slack"         # or "teams"
           ALERT_TEXT: "🚨 Deploy failed in PyForDevOps"
+``
+    env:
+      APP_ENV: ${{ github.event.inputs.env || 'dev' }}
+      CONFIG_PATH: configs/env.yaml
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
