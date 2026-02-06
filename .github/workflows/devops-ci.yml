@@ -50,6 +50,15 @@ jobs:
           DISK_FREE_THRESHOLD: "5"   # raise to 95 to simulate failure
         run: python scripts/disk_check.py
 
+      - name: Run port guard
+        run: python scripts/port_guard.py
+
+      - name: Validate config
+        run: python scripts/config_validate.py
+
+      - name: Service check
+        run: python scripts/service_check.py
+
       - name: Run config reader (dev)
         env:
           APP_ENV: "dev"
