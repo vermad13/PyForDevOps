@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-import yaml
+# -*- coding: utf-8 -*-
+
 import sys
+from read_config import get_env_config
 
-REQUIRED_KEYS = ["app_port", "debug"]
+REQUIRED_KEYS = ["app_port", "debug", "disk_free_threshold", "service_name"]
 
-with open("configs/env.yaml") as f:
-    cfg = yaml.safe_load(f)
+def main():
+    cfg = get_env_config()
+    missing = [k for k in REQUIRED_KEYS if k not in cfg]
+    if missing:
+        print(f"❌ Missing config keys: {missing}")
+        sys.exit(1)
+    print("✅ Config validation passed")
 
-env = "dev"
-
-missing = [k for k in REQUIRED_KEYS if k not in cfg[env]]
-
-if missing:
-    print(f"❌ Missing config keys: {missing}")
-    sys.exit(1)
-
-print("✅ Config validation passed")
+if __name__ == "__main__":
+    main()
