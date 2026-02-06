@@ -90,7 +90,7 @@ jobs:
           compression-level: 6
           retention-days: 7
 
-      # Optional: notify if prechecks fail
+      # 🔔 Notify if PRECHECKS failed
       - name: Notify on failure (prechecks)
         if: failure()
         run: python scripts/notify.py
@@ -126,6 +126,15 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+      # Debug to prove deploy files exist
+      - name: Show deploy files (debug)
+        run: |
+          echo "----- scripts/deploy.py -----"
+          nl -ba scripts/deploy.py || echo "deploy.py missing"
+          echo "----- scripts/rollback.py -----"
+          nl -ba scripts/rollback.py || echo "rollback.py missing"
+
+      # >>> This runs your deploy.py <<<
       - name: Run deploy script
         run: python scripts/deploy.py
 
@@ -135,7 +144,7 @@ jobs:
           echo "Deploy failed - running rollback (simulated)"
           python scripts/rollback.py
 
-      # Optional: notify if deploy fails
+      # 🔔 Notify if DEPLOY failed
       - name: Notify on failure (deploy)
         if: failure()
         run: python scripts/notify.py
