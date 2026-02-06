@@ -28,28 +28,28 @@ jobs:
       - name: Show runner disk state (pre)
         run: |
           df -h
-          echo "Listing repo:"
-          ls -la
+          echo "Listing repository tree (max depth 3):"
+          find . -maxdepth 3 -type f | sort
 
       - name: Run disk check
         env:
-          # You can override threshold per env; try 95 to simulate failure
+          # Set higher (e.g., 95) to simulate a failing precheck
           DISK_FREE_THRESHOLD: "5"
         run: |
-          python devops-python/scripts/disk_check.py
+          python scripts/disk_check.py
 
       - name: Run config reader (dev)
         env:
           APP_ENV: "dev"
         run: |
-          python devops-python/scripts/read_config.py
+          python scripts/read_config.py
 
       - name: Save logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: devops-logs
-          path: devops-python/logs/
+          path: logs/
           if-no-files-found: ignore
 
       - name: Show runner disk state (post)
