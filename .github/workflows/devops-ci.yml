@@ -36,7 +36,6 @@ jobs:
           echo "===== REPO TREE (depth 3) ====="
           find . -maxdepth 3 -type f | sort
 
-      # --- Debug: print files so we catch copy/paste or path issues quickly ---
       - name: Show scripts and config (debug)
         run: |
           echo "----- scripts/disk_check.py -----"
@@ -46,22 +45,17 @@ jobs:
           echo "----- configs/env.yaml -----"
           nl -ba configs/env.yaml || echo "configs/env.yaml not found"
 
-      # --- Run your DevOps scripts ---
       - name: Run disk check
         env:
-          # Tip: set higher (e.g., 95) to simulate a failing precheck
-          DISK_FREE_THRESHOLD: "5"
-        run: |
-          python scripts/disk_check.py
+          DISK_FREE_THRESHOLD: "5"   # raise to 95 to simulate failure
+        run: python scripts/disk_check.py
 
       - name: Run config reader (dev)
         env:
           APP_ENV: "dev"
           CONFIG_PATH: "configs/env.yaml"
-        run: |
-          python scripts/read_config.py
+        run: python scripts/read_config.py
 
-      # --- Save any logs as a build artifact ---
       - name: Save logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
