@@ -1,45 +1,46 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
-Reads YAML config and prints selected environment values.
-Used to validate CI configuration before deployment.
+Helper to read environment-scoped config from configs/env.yaml.
+
+Usage from other scripts:
+    from read_config import get_env_config
+    cfg = get_env_config()          # uses APP_ENV or 'dev'
+    port = cfg["app_port"]
 """
 
 import os
 import sys
+import yaml
+from typing import Dict, Any
 
-try:
-    import yaml
-except Exception as e:
-    print("Failed to import PyYAML. Did pip install run?")
-    print(e)
-    sys.exit(1)
+DEFAULT_ENV = "dev"
+DEFAULT_CONFIG_PATH = "configs/env.yaml"
 
-ENV = os.getenv("APP_ENV", "dev")  # dev|prod
-CONFIG_PATH = os.getenv("CONFIG_PATH", "configs/env.yaml")
-
-def main():
-    # Ensure file exists
-    if not os.path.exists(CONFIG_PATH):
-        print(f"❌ Config not found at: {CONFIG_PATH}")
+def _load_config(config_path: str) -> Dict[str, Any]:
+    if not os.path.exists(config_path):
+        print(f"❌ Config not found: {config_path}", file=sys.stderr)
         sys.exit(2)
-
-    # Read YAML safely
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+    with open(config_path, "r", encoding="utf-8") as f:
         try:
-            cfg = yaml.safe_load(f)
+            return yaml.safe_load(f) or {}
         except yaml.YAMLError as ye:
-            print("❌ YAML parse error:")
-            print(ye)
+            print("❌ YAML parse error:", file=sys.stderr)
+            print(ye, file=sys.stderr)
             sys.exit(3)
 
-    if ENV not in cfg:
-        print(f"❌ Environment '{ENV}' missing in {CONFIG_PATH}. Available: {list(cfg.keys())}")
+def get_env_config(env: str | None = None, config_path: str | None = None) -> Dict[str, Any]:
+    env = env or os.getenv("APP_ENV", DEFAULT_ENV)
+    cfg_path = config_path or os.getenv("CONFIG_PATH", DEFAULT_CONFIG_PATH)
+    all_cfg = _load_config(cfg_path)
+    if env not in all_cfg:
+        print(f"❌ Environment '{env}' not found in {cfg_path}. Available: {list(all_cfg.keys())}", file=sys.stderr)
         sys.exit(4)
-
-    print(f"✅ Active env: {ENV}")
-    print(cfg[ENV])
+    return all_cfg[env]
 
 if __name__ == "__main__":
-    main()
+    # Debug print
+    env = os.getenv("APP_ENV", DEFAULT_ENV)
+    current = get_env_config(env)
+    print(f"Active env: {env}")
+    print(current)
