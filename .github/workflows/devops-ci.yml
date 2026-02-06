@@ -5,7 +5,10 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch: {}  # allows manual run
+  workflow_dispatch: {}   # allow manual runs from Actions tab
+
+permissions:
+  contents: read
 
 jobs:
   run-devops-scripts:
@@ -19,21 +22,34 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Show runner disk state (pre)
+      - name: Show runner disk state (pre) & list files
         run: |
+          echo "===== DISK (pre) ====="
           df -h
-          echo "Listing repository tree (max depth 3):"
+          echo "===== REPO TREE (depth 3) ====="
           find . -maxdepth 3 -type f | sort
 
+      # --- Debug: print files so we catch copy/paste or path issues quickly ---
+      - name: Show scripts and config (debug)
+        run: |
+          echo "----- scripts/disk_check.py -----"
+          nl -ba scripts/disk_check.py || echo "scripts/disk_check.py not found"
+          echo "----- scripts/read_config.py -----"
+          nl -ba scripts/read_config.py || echo "scripts/read_config.py not found"
+          echo "----- configs/env.yaml -----"
+          nl -ba configs/env.yaml || echo "configs/env.yaml not found"
+
+      # --- Run your DevOps scripts ---
       - name: Run disk check
         env:
-          # Set higher (e.g., 95) to simulate a failing precheck
+          # Tip: set higher (e.g., 95) to simulate a failing precheck
           DISK_FREE_THRESHOLD: "5"
         run: |
           python scripts/disk_check.py
@@ -41,17 +57,25 @@ jobs:
       - name: Run config reader (dev)
         env:
           APP_ENV: "dev"
+          CONFIG_PATH: "configs/env.yaml"
         run: |
           python scripts/read_config.py
 
+      # --- Save any logs as a build artifact ---
       - name: Save logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: devops-logs
-          path: logs/
+          path: |
+            logs/**
           if-no-files-found: ignore
+          compression-level: 6
+          retention-days: 7
 
       - name: Show runner disk state (post)
         if: always()
-        run: df -h
+        run: |
+          echo "===== DISK (post) ====="
+          df -h
+``
