@@ -104,9 +104,15 @@ jobs:
   # 2) DEPLOY (runs only if prechecks pass)
   # -------------------------
   deploy:
-    name: Deploy (simulated)
+    name: Deploy
     needs: prechecks
     runs-on: ubuntu-latest
+
+    # 👇 This ties the job to a GitHub Environment (dev or prod)
+    # If 'prod' has Required reviewers, the job will pause for approval.
+    environment:
+      name: ${{ env.APP_ENV }}
+
     env:
       APP_ENV: ${{ github.event.inputs.env || 'dev' }}
       CONFIG_PATH: configs/env.yaml
