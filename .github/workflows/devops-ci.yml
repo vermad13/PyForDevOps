@@ -5,13 +5,17 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch: {}   # allow manual runs from Actions tab
+  workflow_dispatch: {}   # allow manual runs from the Actions tab
 
 permissions:
   contents: read
 
 jobs:
-  run-devops-scripts:
+  # -------------------------
+  # 1) PRECHECKS (Quality Gates)
+  # -------------------------
+  prechecks:
+    name: Pre-deployment checks
     runs-on: ubuntu-latest
 
     steps:
@@ -45,25 +49,26 @@ jobs:
           echo "----- configs/env.yaml -----"
           nl -ba configs/env.yaml || echo "configs/env.yaml not found"
 
-      - name: Run disk check
+      # --- Safety gates. Any non-zero exit here FAILS prechecks ---
+      - name: Disk space gate
         env:
-          DISK_FREE_THRESHOLD: "5"   # raise to 95 to simulate failure
+          DISK_FREE_THRESHOLD: "5"   # set higher (e.g., 95) to simulate a failing gate
         run: python scripts/disk_check.py
 
-      - name: Run port guard
-        run: python scripts/port_guard.py
-
-      - name: Validate config
-        run: python scripts/config_validate.py
-
-      - name: Service check
-        run: python scripts/service_check.py
-
-      - name: Run config reader (dev)
+      - name: Config reader (dev)
         env:
           APP_ENV: "dev"
           CONFIG_PATH: "configs/env.yaml"
         run: python scripts/read_config.py
+
+      - name: Config validation gate
+        run: python scripts/config_validate.py
+      
+      - name: Port guard gate
+        run: python scripts/port_guard.py
+      
+      - name: Service check gate
+        run: python scripts/service_check.py
 
       - name: Save logs as artifact
         if: always()
@@ -76,8 +81,34 @@ jobs:
           compression-level: 6
           retention-days: 7
 
-      - name: Show runner disk state (post)
-        if: always()
+  # -------------------------
+  # 2) DEPLOY (runs only if prechecks pass)
+  # -------------------------
+  deploy:
+    name: Deploy (simulated)
+    needs: prechecks           # <-- this enforces the dependency
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
         run: |
-          echo "===== DISK (post) ====="
-          df -h
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      # ---- Replace these with real deployment steps later ----
+      - name: Simulate deployment steps
+        run: |
+          echo "✅ All prechecks passed. Proceeding with deployment..."
+          echo "1) Pulling code (simulated)"
+          echo "2) Installing app dependencies (simulated)"
+          echo "3) Restarting service (simulated)"
+          echo "4) Post-deploy health check (simulated)"
