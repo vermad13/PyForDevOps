@@ -2,3 +2,7 @@ pyyaml
 psutil
 python-dotenv
 requests
+boto3
+pandas
+matplotlib
+jinja2
