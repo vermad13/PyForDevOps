@@ -90,7 +90,7 @@ jobs:
           compression-level: 6
           retention-days: 7
 
-      # 🔔 Notify if PRECHECKS failed
+      # 🔔 Notify if PRECHECKS failed (optional)
       - name: Notify on failure (prechecks)
         if: failure()
         run: python scripts/notify.py
@@ -108,8 +108,7 @@ jobs:
     needs: prechecks
     runs-on: ubuntu-latest
 
-    # Ties this job to a GitHub Environment (dev or prod)
-    # If 'prod' has Required reviewers, the job pauses for approval.
+    # Tie to GitHub Environment (dev/prod). This supports approvals.
     environment:
       name: ${{ github.event.inputs.env || 'dev' }}
 
@@ -148,7 +147,7 @@ jobs:
           echo "Deploy failed - running rollback (simulated)"
           python scripts/rollback.py
 
-      # 🔔 Notify if DEPLOY failed
+      # 🔔 Notify if DEPLOY failed (optional)
       - name: Notify on failure (deploy)
         if: failure()
         run: python scripts/notify.py
