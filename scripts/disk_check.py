@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import shutil
+import shutil  #used for disk usage stats via shutil.disk_usage
 import sys
 from read_config import get_env_config
 
@@ -9,7 +9,7 @@ def main():
     cfg = get_env_config()
     threshold = float(cfg.get("disk_free_threshold", 20))
 
-    total, used, free = shutil.disk_usage("/")
+    total, used, free = shutil.disk_usage("/")     #It returns three numbers (all in bytes)
     free_percent = (free / total) * 100
 
     print(f"Total: {total/1e9:.2f} GB  Used: {used/1e9:.2f} GB  Free: {free/1e9:.2f} GB")
